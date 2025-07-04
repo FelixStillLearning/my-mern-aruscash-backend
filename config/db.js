@@ -8,15 +8,35 @@ const connectDB = async () => {
         // Simpan URI di dalam file .env di root folder backend.
         // Contoh: MONGO_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/aruskasapp?retryWrites=true&w=majority
 
+        console.log('Attempting to connect to MongoDB...');
+        
         const conn = await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 15000, // 15 seconds
+            socketTimeoutMS: 45000, // 45 seconds
         });
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);
+        console.log(`Database Name: ${conn.connection.name}`);
+        
+        // Handle connection events
+        mongoose.connection.on('error', (err) => {
+            console.error('MongoDB connection error:', err);
+        });
+        
+        mongoose.connection.on('disconnected', () => {
+            console.log('MongoDB disconnected');
+        });
+        
+        mongoose.connection.on('reconnected', () => {
+            console.log('MongoDB reconnected');
+        });
+        
     } catch (error) {
-        console.error(`Error: ${error.message}`);
-        process.exit(1);
+        console.error(`MongoDB Connection Error: ${error.message}`);
+        console.error('Full error:', error);
+        
+        // Don't exit, let the app continue but warn about DB issues
+        console.warn('⚠️  Application starting without database connection');
     }
 };
 
